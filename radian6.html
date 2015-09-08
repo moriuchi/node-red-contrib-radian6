@@ -1,0 +1,401 @@
+
+<script type="text/x-red" data-template-name="radian6-credentials">
+    <div id="node-config-radian6-client-keys">
+        <div class="form-row">
+            <label for="node-config-input-clientId"><i class="fa fa-user"></i> User ID</label>
+            <input type="password" id="node-config-input-clientId">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-clientSecret"><i class="fa fa-key"></i> Password</label>
+            <input type="password" id="node-config-input-clientSecret">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-apikey"><i class="fa fa-key"></i> API Key</label>
+            <input type="password" id="node-config-input-apikey">
+        </div>
+        <div class="form-row">
+           <label>&nbsp;</label>
+           <a class="btn" id="node-config-start-auth" href="#" target="_blank">Authenticate with Radian6</a>
+        </div>
+    </div>
+    <div id="node-config-radian6">
+        <div class="form-row">
+            <label><i class="fa fa-user"></i> Radian6 User</label>
+            <span id="node-config-radian6-userId" class="input-xlarge uneditable-input"></span>
+        </div>
+        <input type="hidden" id="node-config-input-userId">
+    </div>
+</script>
+
+<script type="text/javascript">
+(function() {
+    RED.nodes.registerType('radian6-credentials',{
+        category: 'config',
+        defaults: {
+            userId: {value:""}
+        },
+        credentials: {
+            userId: {type:"text"},
+            clientId: { type: "password"},
+            clientSecret: { type: "password"},
+            apikey: { type: "password"}
+        },
+        label: function() {
+            return this.clientId || 'Radian6';
+        },
+        exportable: false,
+        oneditprepare: function() {
+            var id = this.id;
+            var pathname = document.location.pathname;
+            if (pathname.slice(-1) != "/") {
+                pathname += "/";
+            }
+            var callback = location.protocol + "//";
+            callback += (location.port == "")? location.hostname : location.hostname + ":" + location.port;
+            callback += pathname + "radian6-credentials/auth/callback";
+
+            function updateRadian6AuthButton() {
+                var v1 = $("#node-config-input-clientId").val();
+                var v2 = $("#node-config-input-clientSecret").val();
+                var v3 = $("#node-config-input-apikey").val();
+                $("#node-config-start-auth").toggleClass("disabled",(v1.length === 0 || v2.length === 0 || v3.length === 0));
+            }
+            $("#node-config-input-clientId").on('change keydown paste input',updateRadian6AuthButton);
+            $("#node-config-input-clientSecret").on('change keydown paste input',updateRadian6AuthButton);
+            $("#node-config-input-apikey").on('change keydown paste input',updateRadian6AuthButton);
+
+            function updateRadian6UserId(dn) {
+                $("#node-config-radian6-client-keys").hide();
+                $("#node-config-radian6").show();
+                $("#node-config-input-userId").val(dn);
+                $("#node-config-radian6-userId").html(dn);
+            }
+
+            function pollRadian6Credentials() {
+                $.getJSON('credentials/radian6-credentials/'+id,function(data) {
+                    if (data.userId) {
+                        $("#node-config-dialog-ok").button("enable");
+                        updateRadian6UserId(data.userId);
+                        radian6Node.radian6 = id;
+                        delete window.radian6ConfigNodeIntervalId;
+                    } else {
+                        window.radian6ConfigNodeIntervalId = window.setTimeout(pollRadian6Credentials,2000);
+                    }
+                });
+             }
+
+            updateRadian6AuthButton();
+
+            if (this.userId) {
+                updateRadian6UserId(this.userId);
+            } else {
+                $("#node-config-radian6-client-keys").show();
+                $("#node-config-radian6").hide();
+                $("#node-config-dialog-ok").button("disable");
+            }
+
+            $("#node-config-start-auth").mousedown(function() {
+                var clientId = $("#node-config-input-clientId").val();
+                var clientSecret = $("#node-config-input-clientSecret").val();
+                var apiKey = $("#node-config-input-apikey").val();
+                var url = 'radian6-credentials/auth?id='+id+'&clientId='+clientId+"&clientSecret="+clientSecret+"&apiKey="+apiKey+"&callback="+encodeURIComponent(callback);
+                $(this).attr("href",url);
+                window.radian6ConfigNodeIntervalId = window.setTimeout(pollRadian6Credentials,2000);
+            });
+            $("#node-config-start-auth").click(function(e) {
+                var clientId = $("#node-config-input-clientId").val();
+                var clientSecret = $("#node-config-input-clientSecret").val();
+                var apiKey = $("#node-config-input-apikey").val();
+                if (clientId === "" || clientSecret === "" || apiKey === "") {
+                    e.preventDefault();
+                }
+            });
+        },
+        oneditsave: function() {
+            if (window.radian6ConfigNodeIntervalId) {
+                window.clearTimeout(window.radian6ConfigNodeIntervalId);
+                delete window.radian6ConfigNodeIntervalId;
+            }
+        },
+        oneditcancel: function() {
+            if (window.radian6ConfigNodeIntervalId) {
+                window.clearTimeout(window.radian6ConfigNodeIntervalId);
+                delete window.radian6ConfigNodeIntervalId;
+            }
+        }
+    });
+})();
+</script>
+
+<script type="text/x-red" data-template-name="radian6-topic">
+    <div class="form-row">
+        <label for="node-input-radian6"><i class="fa fa-user"></i> Radian6</label>
+        <input type="text" id="node-input-radian6">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topicid"><i class="fa fa-tag"></i> Topic</label>
+        <select id="node-input-topicid" >
+            <option value=""> == select Topic == </option>
+        </select>
+    </div>
+      <div class="form-row">
+        <label for="node-input-mediatype"><i class="fa fa-tag"></i> Media Type</label>
+        <div id="node-input-mediatypegroup" style="display: inline-block; width: auto; vertical-align: top;">
+        </div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-keyword"><i class="fa fa-tag"></i> Keyword</label>
+        <select id="node-input-keyword">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-excludekeyword"><i class="fa fa-tag"></i> Exclude Keyword</label>
+        <select id="node-input-excludekeyword">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-rangetype"><i class="fa fa-tag"></i> Data Range Type</label>
+        <select id="node-input-rangetype" >
+            <option value="hours">Recent X hours</option>
+            <option value="dates">Date Range</option>
+        </select>
+    </div>
+    <div class="form-row input-hours-row">
+        <label for="node-input-hours"><i class="fa fa-tag"></i> Hours</label>
+        <input type="text" id="node-input-hours" placeholder="24">
+    </div>
+    <div class="form-row input-daterangeStart-row hidden">
+        <label for="node-input-daterangeStart"><i class="fa fa-tag"></i> Date Range Start</label>
+        <input type="text" id="node-input-daterangeStart" placeholder="2015-01-01">
+    </div>
+    <div class="form-row input-daterangeEnd-row hidden">
+        <label for="node-input-daterangeEnd"><i class="fa fa-tag"></i> Date Range End</label>
+        <input type="text" id="node-input-daterangeEnd" placeholder="2015-01-01">
+    </div>
+    <div class="form-row">
+        <label for="node-input-pagesize"><i class="fa fa-tag"></i> Page Size</label>
+        <input type="text" id="node-input-pagesize" placeholder="20">
+    </div>
+    <div class="form-row">
+        <label for="node-input-pageindex"><i class="fa fa-tag"></i> Page Index</label>
+        <input type="text" id="node-input-pageindex" placeholder="1">
+    </div>
+    <div class="form-row">
+        <label for="node-input-keywordgroups"><i class="fa fa-tag"></i> Keyword Groups</label>
+        <input type="checkbox" id="node-input-keywordgroups" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-keywordgroups" style="width: auto; vertical-align: top;">Separate the posts by keyword group</label>
+    </div>
+    <div class="form-tips">
+        <b>Note: </b>Topic: Topic profile ids to get posts for.</br>
+        Hours: Number of hours to go back. (i.e. setting this to 48 will return all posts within the last 2 days).</br>
+        Page Size: Number of posts to return per page.</br>
+        Page Index: Page of data to return.
+    </div>
+    <hr align="middle" >
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="radian6-topic">
+    <p>Radian6 input node. </p>
+</script>
+
+<script type="text/javascript">
+    var radian6Node;
+    function updateTopicsList(lists) {
+        var topicslist = $("#node-input-topicid");
+        topicslist.children("option").remove();
+        topicslist.append('<option value=""> == select Topic == </option>');
+        $.each(lists.topiclist.topicFilters.topicFilter, function(i, opt){
+            topicslist.append('<option value="' + opt.topicFilterId + '">' + opt.name + '</option>');
+        });
+        topicslist.val(radian6Node.topicid);
+        
+        var mediatypes = $("#node-input-mediatypegroup");
+        mediatypes.children().remove();
+        $.each(lists.mediaTypes.MediaTypeList.MediaTypeItem, function(i, opt){
+            mediatypes.append('<span style="display: inline-block; vertical-align: top;">'
+                    + '<input type="checkbox" id="mediatype' + opt.mediaTypeId + '" name="node-input-mediatype"'
+                    + ' value="' + opt.mediaTypeId + '" style="display: inline-block; width: auto; ">'
+                    + '<label for="mediatype' + opt.mediaTypeId + '" style="vertical-align: top;">' + opt.mediaTypeName + '</label>'
+                    + '</span>');
+        });
+        
+        var topicid = $("#node-input-topicid option:selected").val();
+        if(topicid){
+            window.radian6TopicDetailNodeIntervalId = window.setTimeout(pollRadian6TopicDetail,2000);
+        }
+    }
+
+    function pollRadian6Topics() {
+        if(radian6Node.radian6){
+            $.getJSON('radian6-topic/topics?id='+radian6Node.id+'&credentials='+radian6Node.radian6,
+                function(data) {
+                    if (data.topiclist.topicFilters && data.mediaTypes) {
+                        $("#node-dialog-ok").button("enable");
+                        updateTopicsList(data);
+                        delete window.radian6TopicNodeIntervalId;
+                    } else {
+                        window.radian6TopicNodeIntervalId = window.setTimeout(pollRadian6Topics,2000);
+                    }
+                });
+        }else{
+            window.radian6TopicNodeIntervalId = window.setTimeout(pollRadian6Topics,2000);
+        }
+     }
+
+
+    function setTopicDetail(data) {
+        var mediatypes = radian6Node.mediatype || data.topicFilter.mediaType;
+        
+        if (mediatypes) {
+            var aryType = mediatypes.split(",");
+            for(var i=0; i<aryType.length; i++){
+                $("#mediatype" + aryType[i]).attr("checked", true);
+            }
+        } else {
+            $("[name=node-input-mediatype]").each(function(){ this.checked = true; });
+        }
+
+        var keywordGroups = data.topicFilter.filterGroups.filterGroup;
+
+        var keywordlist = $("#node-input-keyword"),
+            exkeywordlist = $("#node-input-excludekeyword");
+        keywordlist.children("option").remove();
+        exkeywordlist.children("option").remove();
+        keywordlist.append('<option value=""> == select Keyword == </option>');
+        exkeywordlist.append('<option value=""> == select Exclude Keyword == </option>');
+        $.each(keywordGroups, function(i, opt){
+            keywordlist.append('<option value="FG_' + opt.filterGroupId + '">' + opt.name + '</option>');
+            exkeywordlist.append('<option value="FG_' + opt.filterGroupId + '">' + opt.name + '</option>');
+        });
+        keywordlist.val(radian6Node.keyword);
+        exkeywordlist.val(radian6Node.excludekeyword);
+    }
+
+    function pollRadian6TopicDetail() {
+        var topicid = $("#node-input-topicid option:selected").val();
+        if(radian6Node.radian6 && topicid){
+            $.getJSON('radian6-topic/topicdetail?id='+radian6Node.id+'&credentials='+radian6Node.radian6+'&topicid='+topicid,
+                function(data) {
+                    if (data.topicDetail) {
+                        $("#node-dialog-ok").button("enable");
+                        setTopicDetail(data.topicDetail);
+                        delete window.radian6TopicDetailNodeIntervalId;
+                    } else {
+                        window.radian6TopicDetailNodeIntervalId = window.setTimeout(pollRadian6TopicDetail,2000);
+                    }
+                });
+        }else{
+            window.radian6TopicDetailNodeIntervalId = window.setTimeout(pollRadian6TopicDetail,2000);
+        }
+     }
+
+
+    RED.nodes.registerType('radian6-topic',{
+        category: 'analysis-input',
+        color:"#C0DEED",
+        defaults: {
+            radian6: {type:"radian6-credentials",required:true},
+            topicid: {value:""},
+            mediatype: {value: ""},
+            keyword: {value:""},
+            excludekeyword: {value:""},
+            rangetype: {value: "hours"},
+            hours: {value:""},
+            daterangeStart: {value:""},
+            daterangeEnd: {value:""},
+            pagesize: {value:""},
+            pageindex: {value:""},
+            keywordgroups: {value:""},
+            name: {value:""}
+        },
+        inputs:1,
+        outputs:1,
+        label: function() {
+            return this.name||'Radian6';
+        },
+        oneditprepare: function() {
+            radian6Node = this;
+            //$("#node-dialog-ok").button("disable");
+            $("#node-input-topicid").change(function(){
+                var id = $("#node-input-topicid option:selected").val();
+                if(id && radian6Node.topicid && id != radian6Node.topicid){
+                    radian6Node.mediatype = "";
+                    radian6Node.keyword = "";
+                    radian6Node.excludekeyword = "";
+                }
+                if(id){
+                    window.radian6TopicDetailNodeIntervalId = window.setTimeout(pollRadian6TopicDetail,2000);
+                }
+            });
+            $("#node-input-rangetype").change(function () {
+                var id = $("#node-input-rangetype option:selected").val();
+                var hoursel = $(".input-hours-row"),
+                    dateStel = $(".input-daterangeStart-row"),
+                    dateEdel = $(".input-daterangeEnd-row");
+                if (id == "dates") {
+                    hoursel.hide();
+                    dateStel.show();
+                    dateEdel.show();
+                    $("#node-input-hours").val("");
+                } else {
+                    hoursel.show();
+                    dateStel.hide();
+                    dateEdel.hide();
+                    $("#node-input-daterangeStart").val("");
+                    $("#node-input-daterangeEnd").val("");
+                }
+            });
+            $("#node-input-keyword").change(function () {
+                var keyword = $("#node-input-keyword option:selected").val();
+                var exkeyword = $("#node-input-excludekeyword option:selected").val();
+                if(keyword || exkeyword){
+                    $("#node-input-keywordgroups").attr("checked", false)
+                                                  .attr("disabled", true);
+                } else {
+                    $("#node-input-keywordgroups").attr("disabled", false);
+                }
+            });
+            $("#node-input-excludekeyword").change(function () {
+                var keyword = $("#node-input-keyword option:selected").val();
+                var exkeyword = $("#node-input-excludekeyword option:selected").val();
+                if(keyword || exkeyword){
+                    $("#node-input-keywordgroups").attr("checked", false)
+                                                  .attr("disabled", true);
+                } else {
+                    $("#node-input-keywordgroups").attr("disabled", false);
+                }
+            });
+            window.radian6TopicNodeIntervalId = window.setTimeout(pollRadian6Topics,2000);
+        },
+        oneditsave: function() {
+            if (window.radian6TopicNodeIntervalId) {
+                window.clearTimeout(window.radian6TopicNodeIntervalId);
+                delete window.radian6TopicNodeIntervalId;
+            }
+            if (window.radian6TopicDetailNodeIntervalId) {
+                window.clearTimeout(window.radian6TopicDetailNodeIntervalId);
+                delete window.radian6TopicDetailNodeIntervalId;
+            }
+            var checkedel = $("[name=node-input-mediatype]:checked");
+            var aryChk = [];
+            for(var i=0; i<checkedel.length; i++){
+                aryChk.push(checkedel[i].value);
+            }
+            radian6Node.mediatype = aryChk.join(",");
+        },
+        oneditcancel: function() {
+            if (window.radian6TopicNodeIntervalId) {
+                window.clearTimeout(window.radian6TopicNodeIntervalId);
+                delete window.radian6TopicNodeIntervalId;
+            }
+            if (window.radian6TopicDetailNodeIntervalId) {
+                window.clearTimeout(window.radian6TopicDetailNodeIntervalId);
+                delete window.radian6TopicDetailNodeIntervalId;
+            }
+        }
+    });
+</script>
