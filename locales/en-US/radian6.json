@@ -1,0 +1,10 @@
+{
+    "radian6_topic" : {
+        "note" : {
+            "topic" : "Topic profile ids to get posts for.",
+            "hours" : "Number of hours to go back. (i.e. setting this to 48 will return all posts within the last 2 days).",
+            "pagesize" : "Number of posts to return per page.",
+            "pageindex" : "Page of data to return."
+        }
+    }
+}

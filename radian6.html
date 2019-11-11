@@ -27,6 +27,12 @@
     </div>
 </script>
 
+<script type="text/x-red" data-help-name="radian6-credentials">
+    <p>Authenticate with Radian6 API. </p>
+    <p>Set UserId(<code>User ID</code>), Password(<code>Password</code>) and API Key(<code>API Key</code>) and click the <code>Authenticate with Radian6</code> button to authenticate. </p>
+</script>
+
+
 <script type="text/javascript">
 (function() {
     RED.nodes.registerType('radian6-credentials',{
@@ -186,10 +192,10 @@
         <label for="node-input-keywordgroups" style="width: auto; vertical-align: top;">Separate the posts by keyword group</label>
     </div>
     <div class="form-tips">
-        <b>Note: </b>Topic: Topic profile ids to get posts for.</br>
-        Hours: Number of hours to go back. (i.e. setting this to 48 will return all posts within the last 2 days).</br>
-        Page Size: Number of posts to return per page.</br>
-        Page Index: Page of data to return.
+        <b>Note: </b>Topic: <span data-i18n="radian6_topic.note.topic"></span></br>
+        Hours: <span data-i18n="radian6_topic.note.hours"></span></br>
+        Page Size: <span data-i18n="radian6_topic.note.pagesize"></span></br>
+        Page Index: <span data-i18n="radian6_topic.note.pageindex"></span>
     </div>
     <hr align="middle" >
     <div class="form-row">
@@ -199,7 +205,46 @@
 </script>
 
 <script type="text/x-red" data-help-name="radian6-topic">
-    <p>Radian6 input node. </p>
+    <p>Get post data from topic profile using Radian6 API. </p>
+
+    <h3>Outputs</h3>
+      <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Output the acquired post data.</dd>
+      </dl>
+
+    <h3>Derails</h3>
+      <p>You can specify the following parameters when retrieving post data.</p>
+      <ul>
+        <li><code>Topic</code> ：
+          <p>Select a topic. The choices show the user's topic. </p>
+        </li>
+        <li><code>Media Type</code> ：
+          <p>Select media type. Multiple selection is possible. The choice shows the media type associated with the selected topic. </p>
+        </li>
+        <li><code>Keyword</code> ：
+          <p>Select keywords. The choices show the keywords associated with the selected topic.</p>
+        </li>
+        <li><code>Exclude Keyword</code> ：
+          <p>Select keywords to exclude. The choices show the keywords associated with the selected topic. </p>
+        </li>
+        <li><code>Hours</code> ：
+          <p>If <code>Recent X hours</code> is selected for <code>Data Range Type</code>, enter the target time of the data to be acquired.</p>
+        </li>
+        <li><code>Date Range Start</code> / <code>Date Range End</code>：
+          <p>If <code>Date Range</code> is selected for <code>Data Range Type</code>, enter the target period of the data to be acquired.</p>
+        </li>
+        <li><code>Page Size</code> ：
+          <p>Enter the number of data to be acquired per page.</p>
+        </li>
+        <li><code>Page Index</code> ：
+          <p>Enter the number of pages to retrieve.</p>
+        </li>
+        <li><code>Keyword Groups</code> ：
+          <p>Select this check box if you want to retrieve posts by keyword group.</p>
+        </li>
+      </ul>
+
 </script>
 
 <script type="text/javascript">
